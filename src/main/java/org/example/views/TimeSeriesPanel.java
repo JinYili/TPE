@@ -34,6 +34,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.List;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -44,7 +45,7 @@ import static org.example.helpers.utilities.*;
 public class TimeSeriesPanel extends JPanel {
 
     private  Map<String, Integer> yAxisLabelsMap = new HashMap<>();
-    private int max=0;
+    protected int max=0;
     private TrainService trainService;
     private  List<XYDataset> allDatasets = new ArrayList<>();
     private  XYDataset datasetHKITPE;
@@ -54,7 +55,7 @@ public class TimeSeriesPanel extends JPanel {
     private List<Marker>  StationNameMarks= new ArrayList<>();
     private List<Marker>  trainNameMarks= new ArrayList<>();
     public JFreeChart chart;
-
+    private ValueMarker currentTimeMarker = createCurrentTimeline();
     private List<Train> trainsHKITPE;
     private List<Train> trainsTPEHKI;
 
@@ -218,12 +219,18 @@ public class TimeSeriesPanel extends JPanel {
         for(Marker marker :StationNameMarks)
             plot.addRangeMarker(marker);
 
+        // label of trains
         for(Marker marker :trainNameMarks)
             plot.addDomainMarker(marker);
 
+        // each min we redraw the line of current
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate( new TimerTask() {public void run() {
+            plot.removeDomainMarker(currentTimeMarker);
+            currentTimeMarker = createCurrentTimeline();
+            plot.addDomainMarker(currentTimeMarker);
+        }},0, 1000*60);
 
-        // this mark show current time
-        plot.addDomainMarker(new ValueMarker(System.currentTimeMillis(), colorOrange, new BasicStroke(3f)), Layer.FOREGROUND);
 
         // draws the marks for each hour
         ZonedDateTime startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault());
@@ -296,7 +303,6 @@ public class TimeSeriesPanel extends JPanel {
         return chartPanel;
     }
 
-
     public JScrollPane wrapTrainJScrollPanel(Component view) {
         JScrollPane  jsp = new JScrollPane(view);
         jsp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -305,6 +311,8 @@ public class TimeSeriesPanel extends JPanel {
         return jsp;
     }
 
-
+    private ValueMarker createCurrentTimeline(){
+        return new ValueMarker(System.currentTimeMillis(), colorOrange, new BasicStroke(3f));
+    }
 }
 
