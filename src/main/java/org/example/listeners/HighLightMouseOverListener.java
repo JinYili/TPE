@@ -12,6 +12,11 @@ public class HighLightMouseOverListener implements ChartMouseListener {
         return highlightNumber;
     }
 
+    public void setHighlightNumber(int highlightNumber) {
+
+        this.highlightNumber = highlightNumber;
+    }
+
     //doing nothing just ignore
     @Override
     public void chartMouseClicked(ChartMouseEvent chartMouseEvent) {}

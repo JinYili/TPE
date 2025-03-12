@@ -42,7 +42,7 @@ public class Train {
     }
 
     public String getOperatorShortCode() {
-        return operatorShortCode;
+        return operatorShortCode.toUpperCase();
     }
 
     public String getTrainType() {

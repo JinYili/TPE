@@ -25,9 +25,11 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.chart.ui.Layer;
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.text.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -36,10 +38,6 @@ import java.util.*;
 import java.util.List;
 import java.util.Timer;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static java.util.Calendar.HOUR;
 import static org.example.helpers.utilities.*;
 
 public class TimeSeriesPanel extends JPanel {
@@ -58,7 +56,7 @@ public class TimeSeriesPanel extends JPanel {
     private ValueMarker currentTimeMarker = createCurrentTimeline();
     private List<Train> trainsHKITPE;
     private List<Train> trainsTPEHKI;
-
+    public  ChartPanel chartPanel;
     protected HighLightMouseOverListener listener;
 
     public TimeSeriesPanel() throws ParseException {
@@ -70,6 +68,9 @@ public class TimeSeriesPanel extends JPanel {
         int limit = 0;
         this.trainsHKITPE = this.trainService.fetchData("HKI", "TPE", limit);
         this.trainsTPEHKI = this.trainService.fetchData("TPE", "HKI", limit );
+
+        //this.allTrains.addAll (this.trainsHKITPE);
+       // this.allTrains.addAll (this.trainsTPEHKI);
 
         datasetHKITPE = createDataset(trainsHKITPE,true);
         datasetTPEHKI = createDataset(trainsTPEHKI,false);
@@ -102,10 +103,10 @@ public class TimeSeriesPanel extends JPanel {
 
             // data preparing
             int rowIndex =0;
-            for (TimeTableRow row:  rows ){
+            for (TimeTableRow row:  rows){
+
                 Date date = df.parse(!row.getActualTime().equals("")? row.getActualTime():row.getScheduledTime());
                 date.setTime(date.getTime() + TimeUnit.HOURS.toMillis(2));
-
                 RegularTimePeriod timestamp = new Minute(date);
                 //need only incoming trains
                 if(createStationName)
@@ -189,24 +190,20 @@ public class TimeSeriesPanel extends JPanel {
 
         //give departure train data to draw
         plot.setDataset(0,datasetHKITPE);
-        XYLineAndShapeRenderer renderer = getXyLineAndShapeRenderer(this.trainsHKITPE);
-        for(int k=0; k<plot.getDataset(0).getSeriesCount();k++) {
-            plot.getRendererForDataset(plot.getDataset(0)).setSeriesPaint(k,colorGreen);
+        for(int i=0; i<datasetHKITPE.getSeriesCount();i++) {
+            plot.getRendererForDataset(plot.getDataset(0)).setSeriesPaint(i, colorOrange );
         }
+        XYLineAndShapeRenderer renderer = getXyLineAndShapeRenderer(this.trainsHKITPE);
         plot.setRenderer(0, renderer);
 
         //give incoming train data to draw
         plot.setDataset(1,datasetTPEHKI);
-        XYLineAndShapeRenderer renderer2 = getXyLineAndShapeRenderer(this.trainsTPEHKI);
-        for(int k=0; k<plot.getDataset(1).getSeriesCount();k++) {
-            plot.getRendererForDataset(plot.getDataset(1)).setSeriesPaint(k,colorPink);
+        for(int j=0; j<datasetTPEHKI.getSeriesCount();j++) {
+            plot.getRendererForDataset(plot.getDataset(1)).setSeriesPaint(j,colorPink);
         }
+        XYLineAndShapeRenderer renderer2 = getXyLineAndShapeRenderer(this.trainsTPEHKI);
         plot.setRenderer(1, renderer2);
 
-
-        plot.setDomainGridlinePaint(colorWhite);
-        plot.setRangeGridlinePaint(colorWhite);
-        plot.setAxisOffset(new RectangleInsets(5.0, 5.0, 5.0, 5.0));
         plot.setDomainCrosshairVisible(true);
         plot.setRangeCrosshairVisible(true);
         plot.setDomainGridlinesVisible(false);
@@ -223,6 +220,7 @@ public class TimeSeriesPanel extends JPanel {
         for(Marker marker :trainNameMarks)
             plot.addDomainMarker(marker);
 
+
         // each min we redraw the line of current
         Timer timer = new Timer();
         timer.scheduleAtFixedRate( new TimerTask() {public void run() {
@@ -238,11 +236,7 @@ public class TimeSeriesPanel extends JPanel {
         for(int n =1; n<24;n++)
             plot.addDomainMarker(new ValueMarker(todayMillis1+3600000*n , colorPink, new BasicStroke(1f)), Layer.FOREGROUND);
 
-        DateAxis domain = (DateAxis) plot.getDomainAxis();
-        domain.setDateFormatOverride(simpleDateFormat);
-        domain.setVerticalTickLabels(true);
-
-        //range in the max KM
+        //settings on the y-axis
         NumberAxis  yAxis = (NumberAxis) plot.getRangeAxis();
         yAxis.setAutoRange(false);
         yAxis.setRange(-8, this.max+8);
@@ -251,17 +245,17 @@ public class TimeSeriesPanel extends JPanel {
         yAxis.setMinorTickCount(0);
         yAxis.setTickUnit(new NumberTickUnit(10));
 
-        DateTickUnit unit = new DateTickUnit(DateTickUnitType.MINUTE,15);
+        // settings on the x-axis
         DateAxis xAxis = (DateAxis) plot.getDomainAxis();
+        xAxis.setVerticalTickLabels(true);
         xAxis.setDateFormatOverride(simpleDateFormat);
-        xAxis.setStandardTickUnits(xAxis.createStandardDateTickUnits());
+        xAxis.setStandardTickUnits(DateAxis.createStandardDateTickUnits());
+        DateTickUnit unit = new DateTickUnit(DateTickUnitType.MINUTE,15);
         xAxis.setTickUnit(unit);
 
         this.chart.setPadding(new RectangleInsets(4, 8, 2, 2));
         return  this.chart;
     }
-
-
 
     private XYLineAndShapeRenderer getXyLineAndShapeRenderer(List<Train> trains) {
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer() {
@@ -283,24 +277,27 @@ public class TimeSeriesPanel extends JPanel {
         return renderer;
     }
 
-    public   ChartPanel createPanel(JFreeChart chart){
-        ChartPanel chartPanel = new ChartPanel(chart , false) {
+    public ChartPanel createPanel(JFreeChart chart){
+        this.chartPanel = new ChartPanel(chart , false) {
             @Override
             public Dimension getPreferredSize() {
-                return new Dimension(2560  , 960   );
+                return new Dimension(1920   , 960   );
             }
         };
-        chartPanel.setMouseWheelEnabled(true);
+        this.chartPanel.setMouseWheelEnabled(true);
 //        chartPanel.setDisplayToolTips(true);
-        chartPanel.setFillZoomRectangle(true);
-        chartPanel.setHorizontalAxisTrace(false);
-        chartPanel.setVerticalAxisTrace(false);
+        this.chartPanel.setFillZoomRectangle(true);
+        this.chartPanel.setHorizontalAxisTrace(false);
+        this.chartPanel.setVerticalAxisTrace(false);
 
-
-        chartPanel.addChartMouseListener(listener);
-        chartPanel.setInitialDelay(0);
+        this.chartPanel.addChartMouseListener(listener);
+        this.chartPanel.setInitialDelay(0);
 
         return chartPanel;
+    }
+
+    private ValueMarker createCurrentTimeline(){
+        return new ValueMarker(System.currentTimeMillis(), colorOrange, new BasicStroke(3f));
     }
 
     public JScrollPane wrapTrainJScrollPanel(Component view) {
@@ -311,8 +308,92 @@ public class TimeSeriesPanel extends JPanel {
         return jsp;
     }
 
-    private ValueMarker createCurrentTimeline(){
-        return new ValueMarker(System.currentTimeMillis(), colorOrange, new BasicStroke(3f));
+    public JPanel createTImeTable() throws ParseException {
+
+
+        JTable jTableHKITPE = createJTimeTable(trainsHKITPE);
+        JLabel jLabelHKITPE = createTableLabel("HELSINKI -> TAMPERE", colorPink);
+        JScrollPane jsp1 = createTableScrollPanel(jTableHKITPE);
+
+        JTable jTableTPEHKI =  createJTimeTable(trainsTPEHKI);
+        JLabel jLabelTPEHKI = createTableLabel ("TAMPERE -> HELSINKI",colorGreen);
+        JScrollPane jsp2 = createTableScrollPanel(jTableTPEHKI);
+
+        JPanel timetablePanel = new JPanel();
+        timetablePanel.setLayout(new FlowLayout());
+        timetablePanel.setPreferredSize(new Dimension(200,960 ));
+        timetablePanel.add(jLabelHKITPE);
+        timetablePanel.add(jsp1);
+        timetablePanel.add(jLabelTPEHKI);
+        timetablePanel.add(jsp2);
+
+        return  timetablePanel;
     }
+
+    private JTable createJTimeTable (List<Train> trains ) throws ParseException {
+        String[] columnNames = { "Name" , "Time"};
+        String[][] data =  new String[trains.size()][2];
+        int index =0;
+        for(Train t: trains){
+            data[index] = new String[] { t.getOperatorShortCode().toUpperCase() + " " + t.getTrainNumber(), !t.getTimeTableRows().get(0).getActualTime().isEmpty() ? formartDateTimeToTime(t.getTimeTableRows().get(0).getActualTime()) : formartDateTimeToTime(t.getTimeTableRows().get(0).getScheduledTime() )};
+            index++;
+        }
+        JTable jtbale = new JTable(data, columnNames);
+        jtbale.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                tableRowClickListener( jtbale, e);
+            }
+        });
+        jtbale.addMouseMotionListener(new MouseMotionListener() {
+            @Override
+            public void mouseDragged(MouseEvent e) {}
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                tableRowHoverListener(jtbale,e);
+            }
+        });
+        jtbale.getTableHeader().setUI(null);
+        jtbale.getTableHeader().setVisible(false);
+        return jtbale;
+    }
+    private JLabel createTableLabel( String text, Color c){
+
+        JLabel label = new JLabel(text);
+        label.setForeground(c);
+        return label;
+    }
+    private JScrollPane createTableScrollPanel(JTable t){
+
+        JScrollPane jsp = new JScrollPane(t);
+        jsp.setPreferredSize(new Dimension(200,480 ));
+        jsp.setBackground(colorWhite);
+        jsp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        return jsp;
+    }
+
+    private void tableRowClickListener(JTable table, ListSelectionEvent e) {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow >= 0) {
+            String text = table.getValueAt(selectedRow,0).toString();
+            int trainNumber = Integer.parseInt(text.split(" ")[1]);
+            listener.setHighlightNumber(trainNumber);
+            this.chartPanel.repaint();
+        }
+    }
+
+    private void tableRowHoverListener(JTable table, MouseEvent  e) {
+        Point p = e.getPoint();
+        int hoveredRow = table.rowAtPoint(p);
+        String text = table.getValueAt(hoveredRow,0).toString();
+        if(!text.isEmpty()){
+            int trainNumber = Integer.parseInt(text.split(" ")[1]);
+            listener.setHighlightNumber(trainNumber);
+            this.chartPanel.repaint();
+        }
+
+    }
+
 }
 

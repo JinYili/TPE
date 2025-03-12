@@ -15,13 +15,14 @@ public class MainWindow {
     //private final TimetablePanel timetable;
     private final HeaderPanel headerPanel;
     private final ChartPanel chartPanel;
+    private JPanel timetablePanel;
     public MainWindow() throws ParseException {
 
 
         this.frame = new JFrame();
         this.frame.setTitle("HKI -> TPE");
         this.frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        this.frame.setSize(2048,1080 );
+        this.frame.setSize(2048,960 );
         this.frame.setLocationRelativeTo(null);
         this.frame.setResizable(true);
 
@@ -30,8 +31,13 @@ public class MainWindow {
 
         TimeSeriesPanel jp =  new TimeSeriesPanel();
         JFreeChart chart = jp.createChart();
+
         this.chartPanel =jp.createPanel(chart);
+        this.timetablePanel= jp.createTImeTable();
+
         this.frame.add(jp.wrapTrainJScrollPanel(this.chartPanel), BorderLayout.CENTER);
+        this.frame.add(timetablePanel, BorderLayout.EAST);
+
         this.frame.pack();
     }
 
