@@ -28,6 +28,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.text.*;
@@ -37,27 +38,29 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
+import java.awt.event.ActionListener;
 import java.util.concurrent.TimeUnit;
 import static org.example.helpers.utilities.*;
 
 public class TimeSeriesPanel extends JPanel {
 
     private  Map<String, Integer> yAxisLabelsMap = new HashMap<>();
-    protected int max=0;
+    private int max=0;
     private TrainService trainService;
-    private  List<XYDataset> allDatasets = new ArrayList<>();
     private  XYDataset datasetHKITPE;
     private  XYDataset datasetTPEHKI;
-    protected List<Station> stations;
+    private List<Station> stations;
     private List<XYLineAnnotation>  lines = new ArrayList<>();
     private List<Marker>  StationNameMarks= new ArrayList<>();
     private List<Marker>  trainNameMarks= new ArrayList<>();
-    public JFreeChart chart;
+    private JFreeChart chart;
     private ValueMarker currentTimeMarker = createCurrentTimeline();
     private List<Train> trainsHKITPE;
     private List<Train> trainsTPEHKI;
-    public  ChartPanel chartPanel;
-    protected HighLightMouseOverListener listener;
+    private ChartPanel chartPanel;
+    private HighLightMouseOverListener listener;
+
+    private int displayOnly =-1;
 
     public TimeSeriesPanel() throws ParseException {
         super();
@@ -75,8 +78,6 @@ public class TimeSeriesPanel extends JPanel {
         datasetHKITPE = createDataset(trainsHKITPE,true);
         datasetTPEHKI = createDataset(trainsTPEHKI,false);
 
-        allDatasets.add(datasetHKITPE);
-        allDatasets.add(datasetTPEHKI);
         this.chart = ChartFactory.createTimeSeriesChart(
                 "HELSINKI - TAMPERE", "", "Distance(KM)", null, false, true, false);
         listener =new HighLightMouseOverListener();
@@ -174,12 +175,8 @@ public class TimeSeriesPanel extends JPanel {
         simpleDateFormat.setTimeZone(TimeZone.getDefault());
 
         XYPlot plot = (XYPlot)  this.chart.getPlot();
-
-        //background;gridline;outline
         this.chart.setBackgroundPaint(colorWhite);
-        GradientPaint gradient =
-                new GradientPaint(new Point(), colorWhite, new Point(), colorGray);
-        plot.setBackgroundPaint(gradient);
+        plot.setBackgroundPaint(colorSomke);
         plot.setDrawingSupplier(new DefaultDrawingSupplier( new Paint[] { colorGreen
         },
                 DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
@@ -190,9 +187,8 @@ public class TimeSeriesPanel extends JPanel {
 
         //give departure train data to draw
         plot.setDataset(0,datasetHKITPE);
-
         for(int i=0; i<datasetHKITPE.getSeriesCount();i++) {
-            plot.getRendererForDataset(plot.getDataset(0)).setSeriesPaint(i, colorGreen );
+              plot.getRendererForDataset(plot.getDataset(0)).setSeriesPaint(i, colorGreen );
         }
         XYLineAndShapeRenderer renderer = getXyLineAndShapeRenderer(this.trainsHKITPE);
         plot.setRenderer(0, renderer);
@@ -200,7 +196,7 @@ public class TimeSeriesPanel extends JPanel {
         //give incoming train data to draw
         plot.setDataset(1,datasetTPEHKI);
         for(int j=0; j<datasetTPEHKI.getSeriesCount();j++) {
-            plot.getRendererForDataset(plot.getDataset(1)).setSeriesPaint(j,colorPink);
+                 plot.getRendererForDataset(plot.getDataset(1)).setSeriesPaint(j,colorPink);
         }
         XYLineAndShapeRenderer renderer2 = getXyLineAndShapeRenderer(this.trainsTPEHKI);
         plot.setRenderer(1, renderer2);
@@ -262,7 +258,7 @@ public class TimeSeriesPanel extends JPanel {
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer() {
             @Override
             public Stroke getItemStroke(int row, int column) {
-                return getSolidOrDash(row, column, trains,  listener.getHighlightNumber());
+                return getSolidOrDash(row, column, trains,  listener.getHighlightNumber() ,displayOnly);
             }
 
             final int min = Math.min(trainsHKITPE.size(), trainsTPEHKI.size());
@@ -330,6 +326,8 @@ public class TimeSeriesPanel extends JPanel {
         JPanel timetablePanel = new JPanel();
         timetablePanel.setLayout(new FlowLayout());
         timetablePanel.setPreferredSize(new Dimension(200,960 ));
+        timetablePanel.add(createBox());
+
         timetablePanel.add(jLabelHKITPE);
         timetablePanel.add(jsp1);
         timetablePanel.add(jLabelTPEHKI);
@@ -396,6 +394,7 @@ public class TimeSeriesPanel extends JPanel {
         int hoveredRow = table.rowAtPoint(p);
         String text = table.getValueAt(hoveredRow,0).toString();
         if(!text.isEmpty()){
+            displayOnly=-1;
             int trainNumber = Integer.parseInt(text.split(" ")[1]);
             listener.setHighlightNumber(trainNumber);
             this.chartPanel.repaint();
@@ -403,5 +402,41 @@ public class TimeSeriesPanel extends JPanel {
 
     }
 
+    private JComboBox createBox() {
+        final JComboBox jComboBox = new JComboBox();
+
+        final String[] allNames = new String[trainsHKITPE.size() + trainsTPEHKI.size() + 1];
+        allNames[0] = "- All -";
+        int index=1;
+        for (Train train : trainsHKITPE) {
+            allNames[index] = train.getOperatorShortCode() + " " + train.getTrainNumber();
+            index++;
+        }
+        for (Train train : trainsTPEHKI) {
+            allNames[index] = train.getOperatorShortCode() + " " + train.getTrainNumber();
+            index++;
+        }
+
+        jComboBox.setModel(new DefaultComboBoxModel(allNames));
+        jComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String str = Objects.requireNonNull(jComboBox.getSelectedItem()).toString();
+                if(!str.equals(allNames[0])){
+
+                    String[] strs = str.split(" ");
+                    displayOnly = Integer.parseInt(strs[1]);
+                }else{
+                    displayOnly=-1;
+
+                }
+
+                System.out.println(max);
+                chartPanel.repaint();
+                chart.setNotify(true);
+            }
+        });
+        return jComboBox;
+    }
 }
 

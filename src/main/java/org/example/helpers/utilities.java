@@ -3,15 +3,13 @@ package org.example.helpers;
 import org.example.models.Station;
 import org.example.models.TimeTableRow;
 import org.example.models.Train;
-import org.jfree.data.time.Minute;
-import org.jfree.data.xy.XYDataset;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.text.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 public class utilities {
 
@@ -65,22 +63,30 @@ public class utilities {
     }
 
     public static  Stroke soild = new BasicStroke(1.0f);
-    public static Stroke dashed =  new BasicStroke(1.0f,BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0f, new float[] {9.0f}, 0.0f);
+    public static Stroke dashed =  new BasicStroke(1.0f,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0f, new float[] {9.0f}, 0.0f);
     public static  Stroke highlightSoild = new BasicStroke(5.0f);
-    public static Stroke highlightDashed =  new BasicStroke(5.0f,BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0f, new float[] {9.0f}, 0.0f);
+    public static Stroke highlightDashed =  new BasicStroke(5.0f,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0f, new float[] {9.0f}, 0.0f);
+    public static Stroke thinest = new BasicStroke(0);
 
-    public static Stroke getSolidOrDash(int row, int column, List<Train> trains, int highlightNumber){
+    public static Stroke getSolidOrDash(int row, int column, List<Train> trains, int highlightNumber, int displayOnly){
+
 
         Train train = trains.get(row) ;
         int trainNumber = train.getTrainNumber();
+
+        if(displayOnly>-1){
+            if(displayOnly!=trainNumber)
+               return thinest;
+        }
+
         String actualTime = train.getTimeTableRows().get(column).getActualTime();
         String scheduledTime = train.getTimeTableRows().get(column).getScheduledTime();
         String liveEstimateTime = train.getTimeTableRows().get(column).getLiveEstimateTime();
 
         if (actualTime.isEmpty() && (!scheduledTime.isEmpty() || !liveEstimateTime.isEmpty()) ){
-            return  trainNumber!=highlightNumber ?  dashed:highlightDashed;
+            return  trainNumber==highlightNumber || displayOnly==trainNumber  ?  highlightDashed:dashed;
         } else {
-            return  trainNumber!=highlightNumber?  soild:highlightSoild;
+            return  trainNumber==highlightNumber || displayOnly == trainNumber ?  highlightSoild:soild;
         }
     }
 
@@ -101,12 +107,12 @@ public class utilities {
 
     public static Color colorGreen = new Color(0,139,139);
     public static final Color colorBlue = new Color(25,25,112);
-    public static final Color colorTransparent =new Color(225,225,225,200 );
+    public static final Color colorTransparent =new Color(1,0,0,0 );
     public static final Color colorPink = new Color(255,20,147);
     public static final Color colorGray = new Color(220,220,220);
     public static final Color colorOrange = new Color(255,165,0);
     public static final Color colorWhite = new Color(255,255,255);
     public static final Color colorRed = new Color(220,20,60);
     public static final Color colorPurple= new Color(138,43,226);
-
+    public static final Color colorSomke = new Color(245,245,245);
 }
