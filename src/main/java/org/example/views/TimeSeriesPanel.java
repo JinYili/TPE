@@ -190,8 +190,9 @@ public class TimeSeriesPanel extends JPanel {
 
         //give departure train data to draw
         plot.setDataset(0,datasetHKITPE);
+
         for(int i=0; i<datasetHKITPE.getSeriesCount();i++) {
-            plot.getRendererForDataset(plot.getDataset(0)).setSeriesPaint(i, colorOrange );
+            plot.getRendererForDataset(plot.getDataset(0)).setSeriesPaint(i, colorGreen );
         }
         XYLineAndShapeRenderer renderer = getXyLineAndShapeRenderer(this.trainsHKITPE);
         plot.setRenderer(0, renderer);
@@ -262,6 +263,13 @@ public class TimeSeriesPanel extends JPanel {
             @Override
             public Stroke getItemStroke(int row, int column) {
                 return getSolidOrDash(row, column, trains,  listener.getHighlightNumber());
+            }
+
+            final int min = Math.min(trainsHKITPE.size(), trainsTPEHKI.size());
+            final Color fixColor = trainsHKITPE.size() < trainsTPEHKI.size() ? colorGreen:colorPink;
+            // need it to fix the color bug
+            public Paint getItemPaint(int row, int col) {
+                return row<min ? super.getItemPaint(row, col):fixColor;
             }
         };
 
