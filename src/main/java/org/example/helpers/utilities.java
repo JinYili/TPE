@@ -99,7 +99,7 @@ public class utilities {
         return "";
     }
 
-    public static Color colorGreen = new Color(0,100,0);
+    public static Color colorGreen = new Color(0,139,139);
     public static final Color colorBlue = new Color(25,25,112);
     public static final Color colorTransparent =new Color(225,225,225,200 );
     public static final Color colorPink = new Color(255,20,147);

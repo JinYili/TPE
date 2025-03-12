@@ -235,7 +235,7 @@ public class TimeSeriesPanel extends JPanel {
         ZonedDateTime startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault());
         long todayMillis1 = startOfToday.toEpochSecond() * 1000;
         for(int n =1; n<24;n++)
-            plot.addDomainMarker(new ValueMarker(todayMillis1+3600000*n , colorPink, new BasicStroke(1f)), Layer.FOREGROUND);
+            plot.addDomainMarker(new ValueMarker(todayMillis1+3600000*n , colorRed, new BasicStroke(1f)), Layer.FOREGROUND);
 
         //settings on the y-axis
         NumberAxis  yAxis = (NumberAxis) plot.getRangeAxis();
