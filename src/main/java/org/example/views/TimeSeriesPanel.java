@@ -285,7 +285,7 @@ public class TimeSeriesPanel extends JPanel {
         this.chartPanel = new ChartPanel(chart , false) {
             @Override
             public Dimension getPreferredSize() {
-                return new Dimension(1920   , 960   );
+                return new Dimension(1600   , 720);
             }
         };
         this.chartPanel.setMouseWheelEnabled(true);
@@ -325,7 +325,7 @@ public class TimeSeriesPanel extends JPanel {
 
         JPanel timetablePanel = new JPanel();
         timetablePanel.setLayout(new FlowLayout());
-        timetablePanel.setPreferredSize(new Dimension(200,960 ));
+        timetablePanel.setPreferredSize(new Dimension(200,720 ));
         timetablePanel.add(createBox());
 
         timetablePanel.add(jLabelHKITPE);
@@ -373,7 +373,7 @@ public class TimeSeriesPanel extends JPanel {
     private JScrollPane createTableScrollPanel(JTable t){
 
         JScrollPane jsp = new JScrollPane(t);
-        jsp.setPreferredSize(new Dimension(200,480 ));
+        jsp.setPreferredSize(new Dimension(200,350 ));
         jsp.setBackground(colorWhite);
         jsp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         return jsp;

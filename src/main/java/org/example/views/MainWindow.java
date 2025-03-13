@@ -22,7 +22,7 @@ public class MainWindow {
         this.frame = new JFrame();
         this.frame.setTitle("HKI -> TPE");
         this.frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        this.frame.setSize(2048,960 );
+        this.frame.setSize(1280,720 );
         this.frame.setLocationRelativeTo(null);
         this.frame.setResizable(true);
 
@@ -37,6 +37,7 @@ public class MainWindow {
 
         this.frame.add(jp.wrapTrainJScrollPanel(this.chartPanel), BorderLayout.CENTER);
         this.frame.add(timetablePanel, BorderLayout.EAST);
+        this.frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         this.frame.pack();
     }
