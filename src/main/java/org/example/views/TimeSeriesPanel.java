@@ -79,7 +79,7 @@ public class TimeSeriesPanel extends JPanel {
         datasetTPEHKI = createDataset(trainsTPEHKI,false);
 
         this.chart = ChartFactory.createTimeSeriesChart(
-                "HELSINKI - TAMPERE", "", "Distance(KM)", null, false, true, false);
+                "", "", "Distance(KM)", null, false, true, false);
         listener =new HighLightMouseOverListener();
 
     }
